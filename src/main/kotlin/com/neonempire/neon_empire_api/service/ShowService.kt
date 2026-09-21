@@ -13,4 +13,8 @@ class ShowService (
         return showRepository.findAll();
     }
 
+    fun saveShow(show : Show) : Show {
+        return showRepository.save(show)
+    }
+
 }
