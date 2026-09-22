@@ -5,6 +5,8 @@ import com.neonempire.neon_empire_api.dto.UpdateShowRequestDTO
 import com.neonempire.neon_empire_api.model.Show
 import com.neonempire.neon_empire_api.service.ShowService
 import jakarta.validation.Valid
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -36,6 +38,10 @@ class ShowsController (private val showService : ShowService) {
         return showService.updateShow(showId,updateShowRequest)
     }
 
-
+    @DeleteMapping("/api/shows/{showId}")
+    fun deleteShow(@PathVariable showId : Long) : ResponseEntity<Void> {
+        showService.deleteShow(showId)
+        return ResponseEntity.noContent().build()
+    }
 
 }

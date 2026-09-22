@@ -40,5 +40,13 @@ class ShowService (
 
         return show
     }
+    fun deleteShow(showId : Long) {
+
+        showRepository.findById(showId)
+            .orElseThrow{ShowNotFoundException("Show with $showId doesn't exist in the database.")}
+
+        showRepository.deleteById(showId)
+
+    }
 
 }
