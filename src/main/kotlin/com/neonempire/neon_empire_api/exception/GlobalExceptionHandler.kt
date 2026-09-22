@@ -28,4 +28,16 @@ class GlobalExceptionHandler {
 
         return responseBody
     }
+
+    @ExceptionHandler(ShowNotFoundException::class)
+    fun handleShowNotFoundException(exception: ShowNotFoundException): ResponseEntity<Map<String, Any>> {
+
+        val response : Map<String,Any> = mapOf(
+            "status" to 404,
+            "error" to (exception.message ?: "Show Not Found")
+        )
+        val responseBody = ResponseEntity(response, HttpStatus.NOT_FOUND)
+
+        return responseBody
+    }
 }
