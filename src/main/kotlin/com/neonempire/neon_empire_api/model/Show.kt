@@ -11,7 +11,7 @@ data class Show (
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-    val venue: String,
-    val city: String,
-    val date: LocalDate
+    var venue: String,
+    var city: String,
+    var date: LocalDate
     )
