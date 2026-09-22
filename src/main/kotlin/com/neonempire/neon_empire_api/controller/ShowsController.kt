@@ -1,6 +1,6 @@
 package com.neonempire.neon_empire_api.controller
 
-import com.neonempire.neon_empire_api.dto.CreateShowRequest
+import com.neonempire.neon_empire_api.dto.CreateShowRequestDTO
 import com.neonempire.neon_empire_api.model.Show
 import com.neonempire.neon_empire_api.service.ShowService
 import jakarta.validation.Valid
@@ -19,14 +19,7 @@ class ShowsController (private val showService : ShowService) {
     }
 
     @PostMapping("/api/shows")
-    fun saveShow(@Valid @RequestBody showRequest: CreateShowRequest) : Show {
-
-        val show = Show(
-            venue = showRequest.venue,
-            city = showRequest.city,
-            date = showRequest.date!!
-        )
-
-        return showService.saveShow(show)
+    fun saveShow(@Valid @RequestBody showRequest: CreateShowRequestDTO) : Show {
+        return showService.saveShow(showRequest)
     }
 }
