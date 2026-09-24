@@ -18,19 +18,19 @@ import org.springframework.web.bind.annotation.PutMapping
 class ShowsController (private val showService : ShowService) {
 
 
-    @GetMapping("/api/shows")
+    @GetMapping("/content/shows")
     fun getShows() : List<Show> {
         return showService.getAllShows()
     }
 
-    @PostMapping("/api/shows")
+    @PostMapping("/content/shows")
     fun saveShow (
         @Valid @RequestBody showRequest: CreateShowRequestDTO
     ) : Show {
         return showService.saveShow(showRequest)
     }
 
-    @PutMapping("/api/shows/{showId}")
+    @PutMapping("/content/shows/{showId}")
     fun updateShow (
         @PathVariable showId : Long ,
         @Valid @RequestBody updateShowRequest : UpdateShowRequestDTO
@@ -38,7 +38,7 @@ class ShowsController (private val showService : ShowService) {
         return showService.updateShow(showId,updateShowRequest)
     }
 
-    @DeleteMapping("/api/shows/{showId}")
+    @DeleteMapping("/content/shows/{showId}")
     fun deleteShow(@PathVariable showId : Long) : ResponseEntity<Void> {
         showService.deleteShow(showId)
         return ResponseEntity.noContent().build()
