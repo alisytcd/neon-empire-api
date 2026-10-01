@@ -19,7 +19,7 @@ import java.util.Optional
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class ShowServiceTest {
+class ShowServiceUT {
 
     private val showRepository : ShowRepository = mock()
     private val service = ShowService(showRepository)
