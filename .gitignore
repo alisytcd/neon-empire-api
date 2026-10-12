@@ -42,3 +42,6 @@ out/
 
 # Local environment variables
 .env
+
+# Local script
+*.ps1
