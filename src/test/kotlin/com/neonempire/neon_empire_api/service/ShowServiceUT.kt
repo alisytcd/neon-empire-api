@@ -134,7 +134,10 @@ class ShowServiceUT {
         assertEquals("Dublin", capturedShow.city)
         assertEquals(LocalDate.of(2030, 1, 3), capturedShow.date)
 
-        assertEquals(expectedResult, actualResult)
+        assertEquals(expectedResult.id, actualResult.id)
+        assertEquals(expectedResult.venue, actualResult.venue)
+        assertEquals(expectedResult.city, actualResult.city)
+        assertEquals(expectedResult.date, actualResult.date)
 
 
     }
