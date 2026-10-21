@@ -21,7 +21,8 @@ import java.util.Base64
 import javax.crypto.spec.SecretKeySpec
 
 @Configuration
-class SecurityConfig(@Value("\${JWT_SECRET}") private val jwtSecret: String, @Value("\${JWT_ISSUER") private val jwtIssuer : String) {
+class SecurityConfig(@Value("\${JWT_SECRET}") private val jwtSecret: String,
+                     @Value("\${JWT_ISSUER") private val jwtIssuer : String) {
 
     private val decodedBytes = Base64.getDecoder().decode(jwtSecret)
 
@@ -48,6 +49,7 @@ class SecurityConfig(@Value("\${JWT_SECRET}") private val jwtSecret: String, @Va
             }
             .httpBasic { it.disable() }
             .formLogin { it.disable() }
+            .oauth2ResourceServer { it.jwt {} }
 
         return http.build()
     }
