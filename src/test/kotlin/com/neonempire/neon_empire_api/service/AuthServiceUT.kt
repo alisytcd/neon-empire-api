@@ -56,7 +56,7 @@ class AuthServiceUT {
         val authResult = authService.authenticateUser(userEmail, password)
 
         //verifying that the passwordEncoder.matches method was called once
-        verify(passwordEncoder.matches(password,encodedPassword))
+        verify(passwordEncoder).matches(password,encodedPassword)
 
         //we also want to ensure that the jwtService was never called to ensure our guarding logic works
         verifyNoInteractions(jwtService)
@@ -87,11 +87,11 @@ class AuthServiceUT {
 
         val authResult = authService.authenticateUser(userEmail, password)
 
-        verify(userRepository.findByEmail(userEmail))
+        verify(userRepository).findByEmail(userEmail)
 
-        verify(passwordEncoder.matches(password,encodedPassword))
+        verify(passwordEncoder).matches(password,encodedPassword)
 
-        verify(jwtService.generateToken(userGuid))
+        verify(jwtService).generateToken(userGuid)
 
         assertEquals(jwtToken,authResult)
 
