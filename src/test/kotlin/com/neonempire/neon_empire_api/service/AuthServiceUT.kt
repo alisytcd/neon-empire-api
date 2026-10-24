@@ -5,10 +5,8 @@ import com.neonempire.neon_empire_api.repository.UserRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
-import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
 import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.security.crypto.password.PasswordEncoder
 import java.util.UUID
