@@ -16,6 +16,8 @@ class JWTService (private val jwtEncoder : JwtEncoder,
 
     fun generateToken(userId : UUID) : String {
 
+        //creating a claims builder to store jwt claims such as user Id, issuer etc.
+        //needed for encoder parameters
         val claimsBuilder = JwtClaimsSet.builder()
 
         claimsBuilder.subject(userId.toString())
@@ -30,12 +32,14 @@ class JWTService (private val jwtEncoder : JwtEncoder,
 
         val claimsSet = claimsBuilder.build()
 
+        //creating a jws header which is needed for encoder parameters as well
         val jwsBuilder = JwsHeader.with(MacAlgorithm.HS256)
 
         val jwsHeader = jwsBuilder.build()
 
         val parameters = JwtEncoderParameters.from(jwsHeader,claimsSet)
 
+        //returning the encoded jwt token as a string
         return jwtEncoder.encode(parameters).tokenValue
     }
 }
