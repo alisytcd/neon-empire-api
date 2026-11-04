@@ -1,5 +1,6 @@
 package com.neonempire.neon_empire_api.integration
 
+import com.jayway.jsonpath.JsonPath
 import com.neonempire.neon_empire_api.model.User
 import com.neonempire.neon_empire_api.repository.UserRepository
 import org.hamcrest.Matchers.isEmptyOrNullString
@@ -18,7 +19,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import tools.jackson.databind.ObjectMapper
 import kotlin.test.assertEquals
 
 
@@ -74,12 +74,8 @@ class AuthenticationIT {
             .andExpect(jsonPath("$.accessToken").value(not(isEmptyOrNullString())))
             .andReturn()
 
-        val responseAsString = response.response.contentAsString
-        val objectMapper = ObjectMapper()
-        val jsonResponse = objectMapper.readTree(responseAsString)
-        val accessToken = jsonResponse["accessToken"].asText()
+        val accessToken = JsonPath.read<String>(response.response.contentAsString,"$.accessToken")
         val decodedToken = jwtDecoder.decode(accessToken)
-
 
         assertEquals(userGuid, decodedToken.subject)
 
@@ -110,5 +106,76 @@ class AuthenticationIT {
 
     }
 
+    @Test
+    fun `unsuccessful login with email that doesn't exist in db returns 401 UNAUTHORIZED response`() {
+
+        val requestLoginJson = """
+            {
+                "email" : "user123456@test.com",
+                "password" : "abcd12"
+            }
+        """.trimIndent()
+
+        mockMvc.perform(post("/auth/login")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestLoginJson))
+            .andExpect(status().isUnauthorized)
+            .andExpect(content().string(""))
+
+    }
+
+    @Test
+    fun `unsuccessful login with empty email returns error message and 400 BAD REQUEST`() {
+
+        val requestLoginJson = """
+            {
+                "email" : "",
+                "password" : "abcd12"
+            }
+        """.trimIndent()
+
+        mockMvc.perform(post("/auth/login")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestLoginJson))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.fields.email").value("Please enter an email."))
+
+    }
+
+    @Test
+    fun `unsuccessful login with invalid email format returns error message and 400 BAD REQUEST`() {
+
+        val requestLoginJson = """
+            {
+                "email" : "testuser222",
+                "password" : "abcd12"
+            }
+        """.trimIndent()
+
+        mockMvc.perform(post("/auth/login")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestLoginJson))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.fields.email").value("Please enter a valid email."))
+
+    }
+
+    @Test
+    fun `unsuccessful login with empty password returns error message and 400 BAD REQUEST`() {
+
+        val requestLoginJson = """
+            {
+                "email" : "testuser222@email.com",
+                "password" : ""
+            }
+        """.trimIndent()
+
+        mockMvc.perform(post("/auth/login")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestLoginJson))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.fields.password").value("Please enter a password."))
+
+    }
 
 }
