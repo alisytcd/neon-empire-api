@@ -29,6 +29,10 @@ class SecurityConfig(@Value("\${JWT_SECRET}") private val jwtSecret: String,
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
 
+        //if a user is making GET requests to /shows and /content shows, they don't need authorization
+        //if a user is trying any other requests to other endpoints (except POST to the login endpoint)
+        //then they need authorization
+
         http
             .csrf { it.disable() }
             .sessionManagement {

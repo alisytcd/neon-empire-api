@@ -1,5 +1,6 @@
 package com.neonempire.neon_empire_api.service
 
+import com.neonempire.neon_empire_api.model.User
 import com.nimbusds.jose.jwk.source.ImmutableSecret
 import com.nimbusds.jose.proc.SecurityContext
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -18,6 +19,8 @@ import java.time.Duration
 import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.assertNotNull
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
@@ -33,8 +36,9 @@ class JwtServiceUT
     //creating the actual service with mocked dependencies
     private val jwtService = JWTService(jwtEncoder, jwtIssuer)
 
-    @Test
-    fun `generateToken successfully creates a jwt token with correct claims and header`(){
+    @ParameterizedTest
+    @EnumSource(User.Role::class)
+    fun `generateToken successfully creates a jwt token with correct claims and header`(userRole : User.Role){
 
         val userID = UUID.randomUUID()
 
@@ -49,7 +53,7 @@ class JwtServiceUT
         //is the expected token we've defined above
         `when`(mockedToken.tokenValue).thenReturn(expectedToken)
 
-        val actualToken = jwtService.generateToken(userID)
+        val actualToken = jwtService.generateToken(userID,userRole)
 
         //using argument captor to capture the parameters that the internal functions such as encode() in
         // jwt service's generateToken method ran with - to ensure it actually encoded the token with the correct values
@@ -67,6 +71,7 @@ class JwtServiceUT
         assertEquals(MacAlgorithm.HS256, jwsHeader?.algorithm)
         assertEquals(userID.toString(),claims.subject)
         assertEquals(jwtIssuer,claims.getClaimAsString("iss"))
+        assertEquals(userRole.name,claims.getClaimAsString("role"))
 
 
         // Verify issuedAt is approximately the current time
@@ -88,8 +93,9 @@ class JwtServiceUT
 
     }
 
-    @Test
-    fun `generateToken successfully signs a JWT token`(){
+    @ParameterizedTest
+    @EnumSource(User.Role::class)
+    fun `generateToken successfully signs a JWT token`(userRole: User.Role){
 
         //creating byteArray
         val keyBytes = ByteArray(32)
@@ -111,7 +117,7 @@ class JwtServiceUT
 
         val userId = UUID.randomUUID()
 
-        val token = localJwtService.generateToken(userId)
+        val token = localJwtService.generateToken(userId,userRole)
 
         //validating the generated jwt token from above using our decoder
         val validatedJwt = decoder.decode(token)
@@ -124,6 +130,7 @@ class JwtServiceUT
         assertEquals("HS256", headers["alg"])
         assertEquals(userId.toString(), claims["sub"])
         assertEquals(jwtIssuer, claims["iss"])
+        assertEquals(userRole.name,claims["role"])
 
 
 

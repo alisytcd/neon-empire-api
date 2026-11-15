@@ -16,7 +16,7 @@ class AuthService (
         val user = userRepository.findByEmail(userEmail) ?: return null
 
         if(passwordEncoder.matches(password, user.password)){
-            return jwtService.generateToken(user.id!!)
+            return jwtService.generateToken(user.id!!,user.role)
         }
 
         return null

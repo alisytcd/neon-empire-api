@@ -75,7 +75,7 @@ class AuthServiceUT {
 
         val userGuid = UUID.randomUUID()
 
-        val user = User(userGuid,userEmail,encodedPassword)
+        val user = User(userGuid,userEmail,encodedPassword, User.Role.ADMIN)
 
         val jwtToken = "MyJwtTokenValue"
 
@@ -83,7 +83,7 @@ class AuthServiceUT {
 
         `when`(passwordEncoder.matches(password,encodedPassword)).thenReturn(true)
 
-        `when`(jwtService.generateToken(userGuid)).thenReturn(jwtToken)
+        `when`(jwtService.generateToken(userGuid, user.role)).thenReturn(jwtToken)
 
         val authResult = authService.authenticateUser(userEmail, password)
 
@@ -91,7 +91,7 @@ class AuthServiceUT {
 
         verify(passwordEncoder).matches(password,encodedPassword)
 
-        verify(jwtService).generateToken(userGuid)
+        verify(jwtService).generateToken(userGuid,User.Role.ADMIN)
 
         assertEquals(jwtToken,authResult)
 

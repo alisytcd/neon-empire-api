@@ -1,5 +1,6 @@
 package com.neonempire.neon_empire_api.service
 
+import com.neonempire.neon_empire_api.model.User
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm
 import org.springframework.security.oauth2.jwt.JwsHeader
@@ -14,13 +15,15 @@ import java.util.UUID
 class JWTService (private val jwtEncoder : JwtEncoder,
           @Value("\${JWT_ISSUER") private val jwtIssuer : String) {
 
-    fun generateToken(userId : UUID) : String {
+    fun generateToken(userId : UUID, userRole: User.Role) : String {
 
         //creating a claims builder to store jwt claims such as user Id, issuer etc.
         //needed for encoder parameters
         val claimsBuilder = JwtClaimsSet.builder()
 
         claimsBuilder.subject(userId.toString())
+
+        claimsBuilder.claim("role",userRole.name)
 
         claimsBuilder.issuer(jwtIssuer)
 

@@ -7,6 +7,8 @@ import org.hamcrest.Matchers.isEmptyOrNullString
 import org.hamcrest.Matchers.not
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
@@ -46,8 +48,9 @@ class AuthenticationIT {
     }
 
 
-    @Test
-    fun `successful user login returns a 200 OK and valid JWT token`(){
+    @ParameterizedTest
+    @EnumSource(User.Role::class)
+    fun `successful user login returns a 200 OK and valid JWT token with appropriate role`(userRole: User.Role){
 
         val userEmail = "user123@test.com"
         val userPassword = "abcd123!"
@@ -61,7 +64,7 @@ class AuthenticationIT {
             }
         """.trimIndent()
 
-        val user = userRepository.save(User(null,userEmail,encodedPassword!!))
+        val user = userRepository.save(User(null,userEmail,encodedPassword!!,userRole))
 
         val userGuid = user.id.toString();
 
@@ -78,6 +81,7 @@ class AuthenticationIT {
         val decodedToken = jwtDecoder.decode(accessToken)
 
         assertEquals(userGuid, decodedToken.subject)
+        assertEquals(userRole.name,decodedToken.claims["role"])
 
     }
 
