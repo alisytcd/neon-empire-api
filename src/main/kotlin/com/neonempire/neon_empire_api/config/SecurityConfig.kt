@@ -16,6 +16,8 @@ import org.springframework.security.oauth2.jwt.JwtEncoder
 import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter
 import org.springframework.security.web.SecurityFilterChain
 import java.util.Base64
 import javax.crypto.spec.SecretKeySpec
@@ -26,9 +28,14 @@ class SecurityConfig(@Value("\${JWT_SECRET}") private val jwtSecret: String,
 
     private val decodedBytes = Base64.getDecoder().decode(jwtSecret)
 
+    private val jwtGrantedAuthoritiesConverter = JwtGrantedAuthoritiesConverter()
+
+    private val jwtAuthenticationConverter = JwtAuthenticationConverter()
+
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
 
+        setupJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter,jwtAuthenticationConverter)
         //if a user is making GET requests to /shows and /content shows, they don't need authorization
         //if a user is trying any other requests to other endpoints (except POST to the login endpoint)
         //then they need authorization
@@ -82,5 +89,11 @@ class SecurityConfig(@Value("\${JWT_SECRET}") private val jwtSecret: String,
         decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(jwtIssuer))
 
         return decoder
+    }
+
+    fun setupJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter : JwtGrantedAuthoritiesConverter, jwtAuthenticationConverter : JwtAuthenticationConverter){
+        jwtGrantedAuthoritiesConverter.setAuthoritiesClaimName("role")
+        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("ROLE_")
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter)
     }
 }
