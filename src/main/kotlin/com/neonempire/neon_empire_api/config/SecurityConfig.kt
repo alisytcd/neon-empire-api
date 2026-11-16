@@ -60,7 +60,10 @@ class SecurityConfig(@Value("\${JWT_SECRET}") private val jwtSecret: String,
             }
             .httpBasic { it.disable() }
             .formLogin { it.disable() }
-            .oauth2ResourceServer { it.jwt {} }
+            .oauth2ResourceServer { oauth2 -> oauth2.jwt { jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)} }
+        //oauth2 refers to the OAuth2 Resource Server configuration object.
+        //jwt refers to the JWT configuration object inside it.
+        //jwt.jwtAuthenticationConverter(jwtAuthenticationConverter) registers the custom authentication converter with Spring Security.
 
         return http.build()
     }
