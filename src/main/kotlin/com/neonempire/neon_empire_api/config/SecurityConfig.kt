@@ -57,7 +57,6 @@ class SecurityConfig(@Value("\${JWT_SECRET}") private val jwtSecret: String,
                         "/auth/login"
                     ).permitAll()
                     .anyRequest().hasRole("ADMIN")
-                    .anyRequest().authenticated()
             }
             .httpBasic { it.disable() }
             .formLogin { it.disable() }
