@@ -8,3 +8,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+
+JWT_SECRET: "3Qp2AlDzI8+2ak/ICbi2hJNov4O9/TVGp83Adu2iPzA="
+JWT_ISSUER: "neon-empire-api"
