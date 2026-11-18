@@ -1,7 +1,9 @@
 package com.neonempire.neon_empire_api.integration
 
 import com.neonempire.neon_empire_api.model.Show
+import com.neonempire.neon_empire_api.model.User
 import com.neonempire.neon_empire_api.repository.ShowRepository
+import com.neonempire.neon_empire_api.service.JWTService
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -21,6 +23,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import java.time.LocalDate
+import java.util.UUID
 import kotlin.test.assertEquals
 
 
@@ -35,9 +38,18 @@ class ShowIntegrationIT {
     @Autowired
     lateinit var showRepository: ShowRepository
 
+    @Autowired
+    lateinit var jwtService : JWTService
+
     @BeforeEach
     fun cleanDatabase() {
         showRepository.deleteAll()
+    }
+
+    private fun generateToken(userRole : User.Role) : String {
+        val uuid = UUID.randomUUID()
+        //create a jwt token with user or admin permissions
+        return jwtService.generateToken(uuid, userRole)
     }
 
     @Test
@@ -77,7 +89,10 @@ class ShowIntegrationIT {
     }
 
     @Test
-    fun `POST show successfully creates a show and persists it in the DB`(){
+    fun `user with admin role can POST show which returns a 200 status and successfully creates a show that persists in the DB`(){
+
+        //create a jwt token with admin permissions
+        val jwtToken = generateToken(User.Role.ADMIN)
 
         val requestShowJson = """
             {
@@ -87,7 +102,7 @@ class ShowIntegrationIT {
             }
         """.trimIndent()
 
-        mockMvc.perform(post("/content/shows")
+        mockMvc.perform(post("/content/shows").header("Authorization", "Bearer $jwtToken")
             .contentType(MediaType.APPLICATION_JSON)
             .content(requestShowJson))
             .andExpect(status().isOk)
@@ -104,8 +119,33 @@ class ShowIntegrationIT {
         assertEquals(LocalDate.of(2030, 3, 1),showsInDatabase[0].date)
     }
 
+
+    @Test
+    fun `user with USER role can't make successful requests to POST show endpoint and receives a 403 status`(){
+
+        val jwtToken = generateToken(User.Role.USER)
+
+        val requestShowJson = """
+            {
+                "venue" : "The Academy",
+                "city" : "Dublin",
+                "date" : "2030-03-01"
+            }
+        """.trimIndent()
+
+        mockMvc.perform(post("/content/shows").header("Authorization", "Bearer $jwtToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestShowJson))
+            .andExpect(status().isForbidden)
+
+        //making sure nothing was saved in db
+        assertEquals(0,showRepository.count())
+    }
+
     @Test
     fun `POST show with invalid parameters produces a 400 Bad Request and nothing persists in DB`(){
+
+        val jwtToken = generateToken( User.Role.ADMIN)
 
         val requestShowJson = """
             {
@@ -115,7 +155,7 @@ class ShowIntegrationIT {
             }
         """.trimIndent()
 
-        mockMvc.perform(post("/content/shows")
+        mockMvc.perform(post("/content/shows").header("Authorization", "Bearer $jwtToken")
             .contentType(MediaType.APPLICATION_JSON)
             .content(requestShowJson))
             .andExpect(status().isBadRequest)
@@ -125,7 +165,9 @@ class ShowIntegrationIT {
     }
 
     @Test
-    fun `PUT show successfully modifies show and persists the change in the DB`(){
+    fun `a user with admin role calls PUT show successfully which returns a 200 and modifies the show and persists the change in the DB`(){
+
+        val jwtToken = generateToken(User.Role.ADMIN)
 
         val show = showRepository.save(
                 Show(
@@ -144,7 +186,7 @@ class ShowIntegrationIT {
             }
         """.trimIndent()
 
-        mockMvc.perform(put("/content/shows/${savedShowId}")
+        mockMvc.perform(put("/content/shows/${savedShowId}").header("Authorization", "Bearer $jwtToken")
             .contentType(MediaType.APPLICATION_JSON)
             .content(requestShowJson))
             .andExpect( status().isOk)
@@ -159,7 +201,45 @@ class ShowIntegrationIT {
     }
 
     @Test
-    fun `PUT show with invalid parameters produces a 400 Bad Request and nothing persists in the DB`(){
+    fun `a user with user role can't successfully make requests to the PUT show endpoint and receives a 403`(){
+
+        val jwtToken = generateToken(User.Role.USER)
+
+        val show = showRepository.save(
+            Show(
+                venue = "The Academy",
+                city = "Dublin",
+                date = LocalDate.of(2030, 1, 1)
+            ))
+
+        val savedShowId = show.id!!
+
+        val requestShowJson = """
+            {
+                "venue" : "The Olympia",
+                "city" : "Dublin",
+                "date" : "2030-03-01"
+            }
+        """.trimIndent()
+
+        mockMvc.perform(put("/content/shows/${savedShowId}").header("Authorization", "Bearer $jwtToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestShowJson))
+            .andExpect( status().isForbidden)
+
+        val savedShow = showRepository.findById(savedShowId).orElseThrow()
+
+        assertEquals(savedShowId,savedShow.id)
+        assertEquals("The Academy", savedShow.venue)
+        assertEquals("Dublin",savedShow.city)
+        assertEquals(LocalDate.of(2030, 1, 1),savedShow.date)
+
+    }
+
+    @Test
+    fun `PUT show with invalid parameters returns 400 and leaves existing show unchanged`(){
+
+        val jwtToken = generateToken(User.Role.ADMIN)
 
         val show = showRepository.save(
             Show(
@@ -178,7 +258,7 @@ class ShowIntegrationIT {
             }
         """.trimIndent()
 
-        mockMvc.perform(put("/content/shows/${savedShowId}")
+        mockMvc.perform(put("/content/shows/${savedShowId}").header("Authorization", "Bearer $jwtToken")
             .contentType(MediaType.APPLICATION_JSON)
             .content(requestShowJson))
             .andExpect( status().isBadRequest)
@@ -195,6 +275,8 @@ class ShowIntegrationIT {
     @Test
     fun `PUT show with an id that doesn't exist in the DB produces a 404 and nothing persists in the DB`(){
 
+        val jwtToken = generateToken(User.Role.ADMIN)
+
         val requestShowJson = """
             {
                 "venue" : "The Olympia",
@@ -203,7 +285,7 @@ class ShowIntegrationIT {
             }
         """.trimIndent()
 
-        mockMvc.perform(put("/content/shows/9999")
+        mockMvc.perform(put("/content/shows/9999").header("Authorization", "Bearer $jwtToken")
             .contentType(MediaType.APPLICATION_JSON)
             .content(requestShowJson))
             .andExpect( status().isNotFound)
@@ -212,7 +294,9 @@ class ShowIntegrationIT {
     }
 
     @Test
-    fun `DELETE show successfully deletes a show with a 204 response and show is deleted in DB`(){
+    fun `a user with admin role calls DELETE show endpoint successfully and deletes a show with a 204 response and show is deleted in DB`(){
+
+        val jwtToken = generateToken(User.Role.ADMIN)
 
         val show = showRepository.save(
             Show(
@@ -223,7 +307,8 @@ class ShowIntegrationIT {
 
         val savedShowId = show.id!!
 
-        mockMvc.perform(delete("/content/shows/${savedShowId}"))
+        mockMvc.perform(delete("/content/shows/${savedShowId}")
+            .header("Authorization", "Bearer $jwtToken"))
             .andExpect( status().isNoContent)
 
         assertEquals(0,showRepository.count())
@@ -232,7 +317,9 @@ class ShowIntegrationIT {
     }
 
     @Test
-    fun `DELETE show returns 404 when request is sent to delete a non-existent show`(){
+    fun `a user with user role can't successfully call DELETE show endpoint and received 403 response with the show still persisting in db`(){
+
+        val jwtToken = generateToken(User.Role.USER)
 
         val show = showRepository.save(
             Show(
@@ -241,12 +328,117 @@ class ShowIntegrationIT {
                 date = LocalDate.of(2030, 1, 1)
             ))
 
-        mockMvc.perform(delete("/content/shows/9999"))
+        val savedShowId = show.id!!
+
+        mockMvc.perform(delete("/content/shows/${savedShowId}")
+            .header("Authorization", "Bearer $jwtToken"))
+            .andExpect( status().isForbidden)
+
+        assertEquals(1,showRepository.count())
+        assertTrue(showRepository.existsById(savedShowId))
+
+    }
+
+    @Test
+    fun `DELETE show returns 404 when request is sent to delete a non-existent show`(){
+        
+        val jwtToken = generateToken(User.Role.ADMIN)
+
+        val show = showRepository.save(
+            Show(
+                venue = "The Academy",
+                city = "Dublin",
+                date = LocalDate.of(2030, 1, 1)
+            ))
+
+        mockMvc.perform(delete("/content/shows/9999")
+            .header("Authorization", "Bearer $jwtToken"))
             .andExpect( status().isNotFound)
 
         assertEquals(1, showRepository.count())
         assertTrue(showRepository.existsById(show.id!!))
 
     }
+
+    @Test
+    fun `unauthenticated user cannot POST show and receives 401`() {
+
+        val requestShowJson = """
+        {
+            "venue": "The Academy",
+            "city": "Dublin",
+            "date": "2030-03-01"
+        }
+    """.trimIndent()
+
+        mockMvc.perform(
+            post("/content/shows")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestShowJson)
+        )
+            .andExpect(status().isUnauthorized)
+
+        assertEquals(0, showRepository.count())
+    }
+
+    @Test
+    fun `unauthenticated user cannot PUT show and receives 401 with existing show unchanged`() {
+
+        val show = showRepository.save(
+            Show(
+                venue = "The Academy",
+                city = "Dublin",
+                date = LocalDate.of(2030, 1, 1)
+            )
+        )
+
+        val savedShowId = show.id!!
+
+        val requestShowJson = """
+        {
+            "venue": "The Olympia",
+            "city": "Dublin",
+            "date": "2030-03-01"
+        }
+    """.trimIndent()
+
+        mockMvc.perform(
+            put("/content/shows/$savedShowId")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestShowJson)
+        )
+            .andExpect(status().isUnauthorized)
+
+        val savedShow = showRepository.findById(savedShowId).orElseThrow()
+
+        assertEquals(savedShowId, savedShow.id)
+        assertEquals("The Academy", savedShow.venue)
+        assertEquals("Dublin", savedShow.city)
+        assertEquals(LocalDate.of(2030, 1, 1), savedShow.date)
+    }
+
+    @Test
+    fun `unauthenticated user cannot DELETE show and receives 401 with show still persisted`() {
+
+        val show = showRepository.save(
+            Show(
+                venue = "The Academy",
+                city = "Dublin",
+                date = LocalDate.of(2030, 1, 1)
+            )
+        )
+
+        val savedShowId = show.id!!
+
+        mockMvc.perform(
+            delete("/content/shows/$savedShowId")
+        )
+            .andExpect(status().isUnauthorized)
+
+        assertEquals(1, showRepository.count())
+        assertTrue(showRepository.existsById(savedShowId))
+    }
+
+    //TODO: ADD TESTS FOR EXPIRED JWT
 
 }
